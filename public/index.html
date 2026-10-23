@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="id"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>EA Dashboard - Setu</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui;background:#0f1115;color:#fff}
+.header{padding:16px;background:#1a1d27;display:flex;justify-content:space-between;align-items:center}
+.card{background:#1a1d27;margin:10px;padding:14px;border-radius:12px;border:1px solid #2a2d3a}
+.big{font-size:24px;font-weight:bold}.green{color:#00ff88}.red{color:#ff4444}
+table{width:100%;font-size:12px;border-collapse:collapse}th{color:#888;text-align:left;padding:6px}
+td{padding:8px 6px;border-top:1px solid #2a2d3a}
+.badge{padding:3px 8px;border-radius:20px;font-size:10px}.buy{background:#00ff8833;color:#00ff88}.sell{background:#ff444433;color:#ff4444}
+.btn{padding:10px 16px;border-radius:8px;border:0;font-weight:bold}.btn-on{background:#00ff88;color:#000}.btn-off{background:#ff4444;color:#fff}
+</style></head><body>
+<div class="header"><div><b>📈 EA Monitor</b><br><small id="conn">EURUSD + XAUUSD - Setu</small></div><div id="live" style="width:10px;height:10px;background:#00ff88;border-radius:50%"></div></div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+<div class="card"><small>Balance</small><div class="big" id="bal">$0</div></div>
+<div class="card"><small>Profit Hari Ini</small><div class="big" id="today">$0</div></div>
+</div>
+
+<div class="card">
+<div style="display:flex;justify-content:space-between"><b>Kontrol EA</b><small id="statusEA">ONLINE</small></div>
+<div style="margin-top:12px;display:flex;gap:8px">
+<button class="btn btn-on" style="flex:1" onclick="control('START')">▶️ START</button>
+<button class="btn btn-off" style="flex:1" onclick="control('STOP')">⏸️ STOP</button>
+</div>
+</div>
+
+<div class="card"><b>Trade Terakhir</b>
+<table><thead><tr><th>Waktu</th><th>Type</th><th>Info</th><th>Profit</th></tr></thead><tbody id="tradeTable"><tr><td colspan="4" style="text-align:center;color:#666">Belum ada data - EA belum kirim</td></tr></tbody></table>
+</div>
+
+<script>
+async function load(){
+  let r=await fetch('/api/ea/status'); let j=await r.json();
+  document.getElementById('bal').innerText='$'+(j.stats.balance||0).toFixed(2);
+  let tp=j.stats.todayProfit||0;
+  document.getElementById('today').innerText=(tp>=0?'+$':'-$')+Math.abs(tp).toFixed(2);
+  document.getElementById('today').className='big '+(tp>=0?'green':'red');
+  let html=''; j.trades.forEach(t=>{
+    html+=`<tr><td>${t.time}</td><td><span class="badge ${t.type=='CLOSE'?'':'buy'}">${t.type}</span></td><td>${t.msg}<br><small style="color:#888">${t.symbol}</small></td><td class="${t.profit>=0?'green':'red'}">${t.profit? '$'+t.profit.toFixed(2):'-'}</td></tr>`;
+  });
+  if(html) document.getElementById('tradeTable').innerHTML=html;
+}
+async function control(cmd){ await fetch('/api/ea/control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:cmd})}); alert('Perintah '+cmd+' dikirim ke EA'); }
+setInterval(load,3000); load();
+</script>
+</body></html>
